@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-public class System {
+public class Computer {
 	private static Logger LOGGER = null;
 	static {
 		try {
@@ -18,7 +18,7 @@ public class System {
 	private Worker worker;
 	private Record current;
 	
-	public System () {
+	public Computer () {
 		this.scanner = new HandheldScanner();
 		this.worker = null;
 	}
