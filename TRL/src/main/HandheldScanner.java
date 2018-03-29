@@ -5,7 +5,7 @@ import java.util.UUID;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-public class HandheldScanner {
+public class HandheldScanner implements Scannable {
 	private static Logger LOGGER = null;
 	static {
 		try {
@@ -15,9 +15,20 @@ public class HandheldScanner {
 			LOGGER = Logger.getLogger(HandheldScanner.class.getName());
 		} catch (Exception e) {e.printStackTrace();}
 	}
-	public UUID scan(Scannable item) {
+	private UUID scannableID;
+	private UUID contentID;
+	public HandheldScanner() {
+		this.scannableID = null;
+		this.contentID = null;
+	}
+	public void scan(Scannable item) {
 		LOGGER.info("Scanned item ID: " + item.getScannableID() + ", with content ID: " + item.getContentID());
 		LOGGER.info("Scanned item is: " + item.toString());
-		return item.getContentID();
+		this.scannableID = item.getScannableID();
+		this.contentID = item.getContentID();
 	}
+	public UUID getScannableID() {return this.scannableID;}
+	public UUID getContentID() {return this.contentID;}
+	public void clearScannableID() {this.scannableID = null;}
+	public void clearContentID() {this.contentID = null;}
 }
