@@ -11,10 +11,10 @@ public class Computer {
 	private static Logger LOGGER = null;
 	static {
 		try {
-			LogManager.getLogManager().readConfiguration(System.class.getClassLoader().getResourceAsStream("main/resources/logging.properties"));
+			LogManager.getLogManager().readConfiguration(Computer.class.getClassLoader().getResourceAsStream("main/resources/logging.properties"));
 			File logdir = new File(LogManager.getLogManager().getProperty("java.util.logging.FileHandler.pattern")).getParentFile();
 			if (logdir != null) logdir.mkdir();
-			LOGGER = Logger.getLogger(System.class.getName());
+			LOGGER = Logger.getLogger(Computer.class.getName());
 		} catch (Exception e) {e.printStackTrace();}
 	}
 	private HandheldScanner scanner;
@@ -35,7 +35,8 @@ public class Computer {
 	public boolean signIn(Worker worker) {
 		if (this.worker==null) {
 			this.worker = worker;
-			LOGGER.info("Signed in worker: " + worker);
+			LOGGER.info("Worker ID validation is skipped due to being out of scope.");
+			LOGGER.info("Signed in worker: " + worker.getName());
 			return true;
 		}
 		else {
@@ -43,6 +44,10 @@ public class Computer {
 			return false;
 		}
 	}
+	public Record getRecord(UUID id) {return this.records.getRecord(id);}
+	public void addRecord(Record record) {this.records.addRecord(record);}
+	public Copy removeCopy(UUID id) {return this.inventory.removeCopy(id);}
+	public void addCopy(Copy copy) {this.inventory.addCopy(copy);}
 	public HandheldScanner getScanner() {return this.scanner;}
 	public Record getCurrentRecord() {return this.current;}
 	public boolean startCheckout() {
@@ -61,7 +66,7 @@ public class Computer {
 			return false;
 		}
 	}
-	public boolean scanCopy() {
+	public boolean checkoutCopy() {
 		UUID scannableID = this.scanner.getScannableID();
 		this.scanner.clearScannableID();
 		UUID contentID = this.scanner.getContentID();
@@ -75,5 +80,13 @@ public class Computer {
 			LOGGER.info("Scan of ID card failed.");
 			return false;
 		}
+	}
+	public List<Copy> completeCheckout() {
+		List<Copy> copies = this.copies;
+		for (Copy copy : this.copies)
+			this.current.addCheckedOutCopy(this.inventory.removeCopy(copy.getContentID()));
+		this.copies = null;
+		this.current = null;
+		return copies;
 	}
 }
