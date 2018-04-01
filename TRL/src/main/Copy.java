@@ -1,17 +1,12 @@
 package main;
 
-import java.util.UUID;
-
-public class Copy implements Scannable {
-	private UUID copyID;
+public class Copy extends ScannableItem {
 	private Book book;
 	
 	public Copy(Book book) {
-		this.copyID = UUID.randomUUID();
+		super(book.getBookID());
 		this.book = book;
 	}
-	public UUID getScannableID() {return this.copyID;}
-	public UUID getContentID() {return this.copyID;}
 	public Book getBook() {return this.book;}
-	public String toString() {return "{" + this.copyID + "::" + this.book + "}";}
+	public String toString() {return String.format("{\"Type\":\"Copy\",%s}", super.toString());}
 }

@@ -6,5 +6,5 @@ public class Patron extends Person {
 		super(name);
 	}
 	public Card getCard() {return this.card;}
-	public void issueCard(Card card) {this.card = card;}
+	public void setCard(Card card) {this.card = card;}
 }

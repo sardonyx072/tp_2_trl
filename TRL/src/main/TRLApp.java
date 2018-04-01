@@ -11,8 +11,8 @@ public class TRLApp {
 		Patron patron = new Patron("Mitchell Hoffmann");
 		Record record = new Record(patron);
 		record.addHold(new Hold("Has not paid tuition...ever."));
-		computer.addRecord(record);
-		patron.issueCard(new Card(record));
+		computer.createRecord(patron);
+		patron.issueCard();
 		HandheldScanner scanner = computer.getScanner();
 		List<Book> books = new ArrayList<Book>();
 		List<Copy> copies = new ArrayList<Copy>();

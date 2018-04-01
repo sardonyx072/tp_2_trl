@@ -1,6 +1,7 @@
 package main;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.logging.LogManager;
@@ -18,30 +19,22 @@ public class Inventory {
 	}
 	private HashMap<UUID,Copy> copies;
 	
-	public Inventory() {
-		this.copies = new HashMap<UUID,Copy>();
-	}
+	public Inventory() {this.copies = new HashMap<UUID,Copy>();}
+	public boolean hasCopy(UUID id) {return this.copies.containsKey(id);}
+	public boolean hasCopy(UUID copyID, UUID bookID) {return this.copies.containsKey(copyID) && this.copies.get(copyID).equals(bookID);}
 	public void addCopy(Copy copy) {
-		this.copies.put(copy.getContentID(),copy);
+		this.copies.put(copy.getItemID(),copy);
 		LOGGER.info("Added copy to inventory: " + copy);
 	}
-	public boolean hasCopy(UUID id) {
-		return this.copies.containsKey(id);
-	}
-	public Copy getCopy (UUID id) {
-		return this.copies.get(id);
-	}
 	public Copy removeCopy(UUID id) {
-		Copy copy = this.getCopy(id);
-		if (copy!=null) {
-			this.copies.remove(id);
-			LOGGER.info("Removed copy from inventory: " + copy);
-			return copy;
-		}
-		else {
-			LOGGER.info("Could not remove copy from inventory (was not in inventory): " + copy);
-			return null;
-		}
+		Copy copy = this.copies.remove(id);
+		LOGGER.info("Removed copy from inventory: " + copy);
+		return copy;
 	}
-	public String toString() {return "{" + String.join("::",this.copies.values().stream().map(copy -> copy.toString()).toString()) + "}";}
+	private Copy[] getCopies() {return this.copies.values().toArray(new Copy[this.copies.size()]);}
+	private Book[] getBooks() {return (Book[]) this.copies.values().stream().map(copy -> copy.getBook()).distinct().toArray();}
+	public String toString() {return String.format("{\"Inventory\":[%s],\"Info\":[%s]}",
+			String.join(",", (String[]) Arrays.asList(this.getCopies()).stream().map(copy -> copy.toString()).toArray()),
+			String.join(",", (String[]) Arrays.asList(this.getBooks()).stream().map(book -> book.toString()).toArray())
+	);}
 }

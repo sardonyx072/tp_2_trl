@@ -2,6 +2,8 @@ package main;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.LogManager;
@@ -17,76 +19,81 @@ public class Computer {
 			LOGGER = Logger.getLogger(Computer.class.getName());
 		} catch (Exception e) {e.printStackTrace();}
 	}
+	private UUID computerID;
 	private HandheldScanner scanner;
-	private Records records;
+	private HashMap<UUID,Record> records;
 	private Inventory inventory;
 	private Worker worker;
 	private Record current;
 	private List<Copy> copies;
 	
 	public Computer () {
-		this.scanner = new HandheldScanner();
-		this.records = new Records();
+		this.computerID = UUID.randomUUID();
+		this.scanner = null;
+		this.records = new HashMap<UUID,Record>();
 		this.inventory = new Inventory();
 		this.worker = null;
 		this.current = null;
 		this.copies = null;
 	}
-	public boolean signIn(Worker worker) {
-		if (this.worker==null) {
-			this.worker = worker;
-			LOGGER.info("Worker ID validation is skipped due to being out of scope.");
-			LOGGER.info("Signed in worker: " + worker.getName());
-			return true;
-		}
-		else {
-			LOGGER.info("Could not sign in worker (worker already signed in): " + worker + ", " + this.worker);
-			return false;
-		}
-	}
-	public Record getRecord(UUID id) {return this.records.getRecord(id);}
-	public void addRecord(Record record) {this.records.addRecord(record);}
-	public Copy removeCopy(UUID id) {return this.inventory.removeCopy(id);}
-	public void addCopy(Copy copy) {this.inventory.addCopy(copy);}
 	public HandheldScanner getScanner() {return this.scanner;}
-	public Record getCurrentRecord() {return this.current;}
-	public boolean startCheckout() {
-		UUID scannableID = this.scanner.getScannableID();
-		this.scanner.clearScannableID();
-		UUID contentID = this.scanner.getContentID();
-		this.scanner.clearContentID();
-		if (this.current==null && scannableID!=null && contentID!=null && this.records.hasRecord(contentID)) {
-			LOGGER.info("Starting checkout for: " + this.records.getRecord(contentID).toString());
-			this.current = this.records.getRecord(contentID);
-			this.copies = new ArrayList<Copy>();
-			return true;
-		}
-		else {
-			LOGGER.info("Scan of ID card failed.");
-			return false;
+	public void attachScanner(HandheldScanner scanner) {
+		scanner.attach(this);
+		this.scanner = scanner;
+	}
+	public HashMap<Hold,Date> getHolds() {return this.current.getHolds();}
+	public HashMap<Copy,Date> getOutCopies() {return this.current.getCopies();}
+	public HashMap<Copy,Date> getAuditTrait() {return this.getAuditTrait();}
+	public List<Copy> getRequestedCopies() {return this.copies;}
+	public void signIn(Worker worker) {
+		this.worker = worker;
+		LOGGER.info("Signed in worker: " + worker.getName());
+	}
+	public void scan(String type, UUID itemID, UUID referencedItemID) {
+		switch(type) {
+		case "main.Card":
+			if (this.records.get(referencedItemID).validate(itemID, referencedItemID))
+				this.startCheckout(referencedItemID);
+			else
+				LOGGER.info("Session already open.");
+			break;
+		case "main.Copy":
+			if (this.inventory.hasCopy(itemID,referencedItemID))
+				this.checkoutCopy(itemID);
+			else
+				LOGGER.info("Scanned item is not in system inventory.");
+			break;
+		default:
+			LOGGER.warning("Invalid type scanned.");
+			break;
 		}
 	}
-	public boolean checkoutCopy() {
-		UUID scannableID = this.scanner.getScannableID();
-		this.scanner.clearScannableID();
-		UUID contentID = this.scanner.getContentID();
-		this.scanner.clearContentID();
-		if (this.current!=null && scannableID!=null && contentID!=null && this.inventory.hasCopy(contentID)) {
-			LOGGER.info("Checking out copy for: " + this.inventory.getCopy(contentID).toString());
-			this.copies.add(this.inventory.removeCopy(contentID));
-			return true;
-		}
-		else {
-			LOGGER.info("Scan of ID card failed.");
-			return false;
-		}
+	public void createRecord(Patron patron) {
+		Record record = new Record(patron);
+		this.records.put(record.getPatronID(), record);
+	}
+	public void addCopy(Copy copy) {this.inventory.addCopy(copy);}
+	public Record getCurrentRecord() {return this.current;}
+	public void startCheckout(UUID recordID) {
+		this.current = this.records.get(recordID);
+		this.copies = new ArrayList<Copy>();
+		LOGGER.info(String.format("Started checkout for patron ID %s on computer %s by worker %s.",this.current.getPatronID(), this.computerID, this.worker));
+	}
+	public void checkoutCopy(UUID copyID) {
+		Copy copy = this.inventory.removeCopy(copyID);
+		this.copies.add(copy);
+		LOGGER.info(String.format("Added copy %s to running checkout list for patron %s.", copy, this.current.getPatronID()));
 	}
 	public List<Copy> completeCheckout() {
 		List<Copy> copies = this.copies;
-		for (Copy copy : this.copies)
-			this.current.addCheckedOutCopy(this.inventory.removeCopy(copy.getContentID()));
 		this.copies = null;
 		this.current = null;
+		LOGGER.info(String.format("Completed checkout for patron ID %s on computer %s by worker %s with copies %s.", 
+			this.current.getPatronID(),
+			this.computerID,
+			this.worker,
+			String.join(",", (String[]) copies.stream().map(copy -> copy.toString()).toArray())
+		));
 		return copies;
 	}
 }
