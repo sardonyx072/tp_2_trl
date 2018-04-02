@@ -7,16 +7,16 @@ public class TRLApp {
 
 	public static void main(String[] args) {
 		Computer computer = new Computer();
+		computer.attachScanner(new HandheldScanner());
 		Worker worker = new Worker("Eyad Shesli");
-		Patron patron = new Patron("Mitchell Hoffmann");
-		Record record = new Record(patron);
-		record.addHold(new Hold("Has not paid tuition...ever."));
-		computer.createRecord(patron);
-		patron.issueCard();
-		HandheldScanner scanner = computer.getScanner();
+		Patron patron1 = new Patron("Mitchell Hoffmann");
+		patron1.setCard(computer.createRecord(patron1));
+		computer.addHold(patron1.getCard().getReferencedItemID(),new Hold("Has not paid tuition...ever."));
+		Patron patron2 = new Patron("Mitchell 2 Hoffmann");
+		patron2.setCard(computer.createRecord(patron2));
 		List<Book> books = new ArrayList<Book>();
 		List<Copy> copies = new ArrayList<Copy>();
-		List<Copy> checkout = new ArrayList<Copy>();
+		List<Copy> checkoutPre = new ArrayList<Copy>();
 		books.add(new Book("From Hello World to Taking Over The World: An Idiot's Guide to Computers","Hugh Mann"));
 		books.add(new Book("Silicon and Sparks", "Roboto Amor"));
 		books.add(new Book("Alan's Guide to Mythical Creatures Volume 17 - The Good Manager", "Alan Kay"));
@@ -27,26 +27,18 @@ public class TRLApp {
 		books.add(new Book("1001 Popcorn Recipes That Penguins Will Love", "Linus Torvalds"));
 		for (Book book: books) {
 			Copy first = new Copy(book);
-			checkout.add(first);
+			checkoutPre.add(first);
 			copies.add(first);
 			copies.add(new Copy(book));
 			copies.add(new Copy(book));
 			copies.add(new Copy(book));
 		}
 		for (Copy copy : copies)
-			computer.addCopy(copy);
+			computer.addCopyToInventory(copy);
 		computer.signIn(worker);
-		for (Copy copy : checkout)
-			patron.acceptCopy(copy);
-		patron.greet(worker);
-		worker.greet(patron);
-		worker.scan(scanner, patron.getCard());
-		computer.startCheckout();
-		while (patron.hasCopies()) {
-			worker.acceptCopy(patron.giveCopy());
-			worker.scan(scanner, worker.giveCopy());
-			computer.checkoutCopy();
-		}
-		computer.completeCheckout();
+		worker.scan(computer.getScanner(), patron1.getCard());
+		while (checkoutPre.size() > 0)
+			worker.scan(computer.getScanner(), checkoutPre.remove(0));
+		List<Copy> checkoutPost = computer.completeCheckout();
 	}
 }

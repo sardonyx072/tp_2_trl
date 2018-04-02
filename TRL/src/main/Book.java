@@ -15,5 +15,5 @@ public class Book {
 	public UUID getBookID() {return this.bookID;}
 	public String getTitle() {return this.title;}
 	public String getAuthor() {return this.author;}
-	public String toString() {return "{" + this.bookID + "::" + String.format("%-32s",this.title) + "::" + String.format("%-32s",this.author) + "}";}
+	public String toString() {return String.format("{\"Title\":\"%s\",\"Author\":\"%s\"}", this.title, this.author);}
 }

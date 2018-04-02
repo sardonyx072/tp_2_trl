@@ -38,6 +38,7 @@ public class Record {
 	public HashMap<Hold,Date> getHolds() {return this.holds;}
 	public HashMap<Copy,Date> getCopies() {return this.copies;}
 	public HashMap<Copy,Date> getAudit() {return this.audit;}
+	public void setCard(Card card) {this.card = card;}
 	public boolean validate(UUID cardID, UUID patronID) {return this.card.getItemID().equals(cardID) && this.patronID.equals(patronID);}
 	public void checkoutCopy(Copy copy) {
 		int daysUntilDue = 120;

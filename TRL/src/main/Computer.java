@@ -1,6 +1,11 @@
 package main;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,6 +15,8 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 public class Computer {
+	private static final String INVENTORY_DB = "./save/inventory.txt";
+	private static final String RECORDS_DB = "./save/records.txt";
 	private static Logger LOGGER = null;
 	static {
 		try {
@@ -31,7 +38,7 @@ public class Computer {
 		this.computerID = UUID.randomUUID();
 		this.scanner = null;
 		this.records = new HashMap<UUID,Record>();
-		this.inventory = new Inventory();
+		this.loadInventory();
 		this.worker = null;
 		this.current = null;
 		this.copies = null;
@@ -64,15 +71,24 @@ public class Computer {
 				LOGGER.info("Scanned item is not in system inventory.");
 			break;
 		default:
-			LOGGER.warning("Invalid type scanned.");
+			LOGGER.warning("Invalid type scanned. (" + type + ")");
 			break;
 		}
 	}
-	public void createRecord(Patron patron) {
+	public Card createRecord(Patron patron) {
 		Record record = new Record(patron);
+		Card card = new Card(record);
+		record.setCard(card);
 		this.records.put(record.getPatronID(), record);
+		return card;
 	}
-	public void addCopy(Copy copy) {this.inventory.addCopy(copy);}
+	public Card issueCard(Record record) {
+		Card card = new Card(record);
+		record.setCard(card);
+		return card;
+	}
+	public void addCopyToInventory(Copy copy) {this.inventory.addCopy(copy);}
+	public void addHold(UUID patronID, Hold hold) {this.records.get(patronID).addHold(hold);}
 	public Record getCurrentRecord() {return this.current;}
 	public void startCheckout(UUID recordID) {
 		this.current = this.records.get(recordID);
@@ -86,14 +102,46 @@ public class Computer {
 	}
 	public List<Copy> completeCheckout() {
 		List<Copy> copies = this.copies;
-		this.copies = null;
-		this.current = null;
 		LOGGER.info(String.format("Completed checkout for patron ID %s on computer %s by worker %s with copies %s.", 
 			this.current.getPatronID(),
 			this.computerID,
 			this.worker,
-			String.join(",", (String[]) copies.stream().map(copy -> copy.toString()).toArray())
+			String.join(",", copies.stream().map(copy -> copy.toString()).toArray(String[]::new))
 		));
+		this.copies = null;
+		this.current = null;
+		this.saveInventory();
 		return copies;
+	}
+	private void saveInventory() {
+		BufferedWriter writer = null;
+		File file = new File(INVENTORY_DB);
+		try{file.getParentFile().mkdir();} catch(Exception e) {}
+		try {
+			writer = new BufferedWriter(new FileWriter(file));
+			writer.write(this.inventory.toString());
+		} catch (IOException e) {LOGGER.warning(e.getMessage());}
+		finally {
+			try {
+				writer.close();
+			} catch (IOException e) {LOGGER.severe(e.getMessage());}
+		}
+	}
+	private void loadInventory() {
+		BufferedReader reader = null;
+		File file = new File(INVENTORY_DB);
+		try {
+			reader = new BufferedReader(new FileReader(file));
+			StringBuilder builder = new StringBuilder();
+			String line = null;
+			do {
+				line = reader.readLine();
+				builder.append(line);
+			} while (line != null);
+			this.inventory = Inventory.parse(builder.toString());
+		} catch (IOException e) {
+			LOGGER.warning("Could not load inventory.");
+			this.inventory = new Inventory();
+		}
 	}
 }

@@ -21,6 +21,6 @@ public class HandheldScanner {
 	public void attach(Computer computer) {this.computer = computer;}
 	public void scan(ScannableItem item) {
 		LOGGER.info("Scanning item with handheld scanner: " + item);
-		this.computer.scan(item.getClass().toString(), item.getItemID(), item.getReferencedItemID());
+		this.computer.scan(item.getClass().getName(), item.getItemID(), item.getReferencedItemID());
 	}
 }
