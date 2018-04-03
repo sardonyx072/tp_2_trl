@@ -7,8 +7,12 @@ public abstract class ScannableItem implements Scannable {
 	private UUID referencedItemID;
 	
 	public ScannableItem(UUID referencedItemID) {
-		this.referencedItemID = referencedItemID;
 		this.itemID = UUID.randomUUID();
+		this.referencedItemID = referencedItemID;
+	}
+	public ScannableItem(UUID itemID, UUID referencedItemID) {
+		this.itemID = itemID;
+		this.referencedItemID = referencedItemID;
 	}
 	public UUID getItemID() {return this.itemID;}
 	public UUID getReferencedItemID() {return this.referencedItemID;}

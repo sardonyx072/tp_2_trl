@@ -37,13 +37,17 @@ public class Inventory {
 	private Book[] getBooks() {return (Book[]) this.copies.values().stream().map(copy -> copy.getBook()).distinct().toArray();}
 	public static Inventory parse(String str) {
 		Inventory inventory = new Inventory();
-		String[] copyList = str.substring(str.indexOf("\"Inventory\":[")+13, str.indexOf("],")-1).split("},{");
-		copyList[0] = copyList[0].substring(1);
-		copyList[copyList.length-1] = copyList[copyList.length-1].substring(0, copyList[copyList.length-1].length()-1);
-		String[] bookList = str.substring(str.lastIndexOf("\"Info\":[")+8, str.lastIndexOf("]}")-1).split("},{");
-		bookList[0] = bookList[0].substring(1);
-		bookList[bookList.length-1] = bookList[bookList.length-1].substring(0, bookList[bookList.length-1].length()-1);
-		JsonObject i = JsonObject();
+		JsonObject jsonRead = new JsonParser().parse(str).getAsJsonObject();
+		HashMap<UUID,Book> books = new HashMap<UUID,Book>();
+		for (JsonElement i : jsonRead.getAsJsonArray("Info")) {
+			JsonObject jsonBook = i.getAsJsonObject();
+			Book book = new Book(UUID.fromString(jsonBook.get("BookID").getAsString()),jsonBook.get("Title").getAsString(),jsonBook.get("Author").getAsString());
+			books.put(book.getBookID(), book);
+		}
+		for (JsonElement i : jsonRead.getAsJsonArray("Inventory")) {
+			JsonObject jsonCopy = i.getAsJsonObject().getAsJsonObject("ScanInfo");
+			inventory.addCopy(new Copy(UUID.fromString(jsonCopy.getAsJsonObject("ItemID").getAsString()),books.get(UUID.fromString(jsonCopy.getAsJsonObject("ReferencedItemID").getAsString()))));
+		}
 		return inventory;
 	}
 	public String toString() {return String.format("{\"Inventory\":[%s],\"Info\":[%s]}",

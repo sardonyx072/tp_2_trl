@@ -144,4 +144,10 @@ public class Computer {
 			this.inventory = new Inventory();
 		}
 	}
+	private void saveRecords() {
+		
+	}
+	private void loadRecords() {
+		
+	}
 }
