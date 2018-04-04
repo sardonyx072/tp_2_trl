@@ -145,9 +145,36 @@ public class Computer {
 		}
 	}
 	private void saveRecords() {
-		
+		BufferedWriter writer = null;
+		File file = new File(RECORDS_DB);
+		try {file.getParentFile().mkdir();} catch(Exception e) {}
+		try {
+			writer = new BufferedWriter(new FileWriter(file));
+			for (Record record : this.records.values())
+				writer.write(record.toString());
+			writer.write(String.join("\n", this.records.values().stream().map(record -> record.toString()).toArray(String[]::new)));
+		} catch (IOException e) {LOGGER.warning(e.getMessage());}
+		finally {
+			try {
+				writer.close();
+			} catch (IOException e) {LOGGER.severe(e.getMessage());}
+		}
 	}
 	private void loadRecords() {
-		
+		BufferedReader reader = null;
+		File file = new File(RECORDS_DB);
+		try {
+			reader = new BufferedReader(new FileReader(file));
+			StringBuilder builder = new StringBuilder();
+			String line = null;
+			do {
+				line = reader.readLine();
+				builder.append(line);
+			} while (line != null);
+			
+		} catch (IOException e) {
+			LOGGER.warning("Could not load patron records.");
+			this.records = new HashMap<UUID,Record>();
+		}
 	}
 }

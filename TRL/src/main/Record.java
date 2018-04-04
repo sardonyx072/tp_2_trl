@@ -1,6 +1,9 @@
 package main;
 
+import com.google.gson.*;
+
 import java.io.File;
+import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,27 +22,39 @@ public class Record {
 		} catch (Exception e) {e.printStackTrace();}
 	}
 	private UUID patronID;
-	private Patron patron;
-	private Card card;
+	private String patronName;
+	private UUID cardID;
 	private HashMap<Hold,Date> holds;
 	private HashMap<Copy,Date> copies;
 	private HashMap<Copy,Date> audit;
 	
 	public Record(Patron patron) {
 		this.patronID = UUID.randomUUID();
-		this.patron = patron;
-		this.card = null;
+		this.patronName = patron.getName();
+		this.cardID = null;
 		this.holds = new HashMap<Hold,Date>();
 		this.copies = new HashMap<Copy,Date>();
 		this.audit = new HashMap<Copy,Date>();
 	}
+	public Record(String jsonStr) {
+		JsonObject jsonRecord = new JsonParser().parse(jsonStr).getAsJsonObject();
+		this.patronID = UUID.fromString(jsonRecord.get("PatronID").getAsString());
+		this.patronName = jsonRecord.get("Name").getAsString();
+		this.cardID = UUID.fromString(jsonRecord.get("ActiveCard").getAsString());
+		JsonArray holds = jsonRecord.getAsJsonArray("Hold");
+		this.holds = new HashMap<Hold,Date>();
+		for (JsonElement jsonHold : holds)
+			this.holds.put(new Hold(jsonHold.getAsJsonObject().get("Hold").getAsJsonObject().get("Hold").getAsString()), new Date(jsonHold.getAsJsonObject().get("AddDate").getAsString()));
+		this.copies = new HashMap<Copy,Date>();
+		this.audit = new HashMap<Copy,Date>();
+	}
 	public UUID getPatronID() {return this.patronID;}
-	public Patron getPatron() {return this.patron;}
+	public String getPatron() {return this.patronName;}
 	public HashMap<Hold,Date> getHolds() {return this.holds;}
 	public HashMap<Copy,Date> getCopies() {return this.copies;}
 	public HashMap<Copy,Date> getAudit() {return this.audit;}
-	public void setCard(Card card) {this.card = card;}
-	public boolean validate(UUID cardID, UUID patronID) {return this.card.getItemID().equals(cardID) && this.patronID.equals(patronID);}
+	public void setCard(Card card) {this.cardID = card.getItemID();}
+	public boolean validate(UUID cardID, UUID patronID) {return this.cardID.equals(cardID) && this.patronID.equals(patronID);}
 	public void checkoutCopy(Copy copy) {
 		int daysUntilDue = 120;
 		LOGGER.info(String.format("Checking out copy %s and added to patron record %s, due in %s days.",copy,this.patronID,daysUntilDue));
@@ -72,8 +87,8 @@ public class Record {
 	public String toString() {
 		return String.format("{\"PatronID\":%s,\"Name\":\"%s\",\"ActiveCard\":%s,\"Holds\":[%s],\"CheckedOutCopies\":[%s],\"AuditTrail\":[%s]}",
 			this.patronID,
-			this.patron.getName(),
-			this.card,
+			this.patronName,
+			this.cardID,
 			String.join(",", (String[]) this.holds.keySet().stream().map(hold -> String.format("{\"Hold\":%s,\"AddDate\":%s}",hold,this.holds.get(hold))).toArray()),
 			String.join(",", (String[]) this.copies.keySet().stream().map(copy -> String.format("{\"Copy\":%s,\"DueDate\":%s}",copy,this.copies.get(copy))).toArray()),
 			String.join(",", (String[]) this.audit.keySet().stream().map(copy -> String.format("{\"Copy\":%s,\"ReturnedDate\":%s}",copy,this.audit.get(copy))).toArray())
