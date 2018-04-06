@@ -27,7 +27,7 @@ public class TRLApp {
 		books.add(new Book("1001 Popcorn Recipes That Penguins Will Love", "Linus Torvalds"));
 		books.add(new Book("Lorem Ipsum", "Sample Text"));
 		books.add(new Book("Who is JSON and why does he need so much REST?", "Jason Webster"));
-		books.add(new Book("I can C you now", "Dennis Ritchie"));
+		books.add(new Book("I Can C Clearly Now", "Dennis Ritchie"));
 		books.add(new Book("I, Human", "Alan Turing and Isaac Asimov"));
 		books.add(new Book("Singularity", "John von Neumann"));
 		books.add(new Book("The Shortest Path to Success", "Edsger Dijkstra"));

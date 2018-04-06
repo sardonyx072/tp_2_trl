@@ -42,9 +42,9 @@ public class Record {
 		this.patronName = jsonRecord.get("Name").getAsString();
 		this.cardID = UUID.fromString(jsonRecord.get("ActiveCard").getAsString());
 		this.holds = new HashMap<Hold,Date>();
-		JsonArray jsonHolds = jsonRecord.getAsJsonArray("Hold");
+		JsonArray jsonHolds = jsonRecord.getAsJsonArray("Holds");
 		for (JsonElement jsonHold : jsonHolds)
-			this.holds.put(new Hold(jsonHold.getAsJsonObject().get("Hold").getAsJsonObject().get("Hold").getAsString()), new Date(jsonHold.getAsJsonObject().get("AddDate").getAsString()));
+			this.holds.put(new Hold(jsonHold.getAsJsonObject().get("Hold").getAsJsonObject().get("Type").getAsString()), new Date(jsonHold.getAsJsonObject().get("AddDate").getAsString()));
 		this.copies = new HashMap<Copy,Date>();
 		JsonArray jsonCopies = jsonRecord.getAsJsonArray("CheckedOutCopies");
 		for (JsonElement jsonCopy : jsonCopies)
@@ -91,7 +91,7 @@ public class Record {
 		LOGGER.info(String.format("Successfully removed hold %s added on %s from patron record %s on %s.",hold,addedDate,this.patronID,date));
 	}
 	public String toString() {
-		return String.format("{\"PatronID\":%s,\"Name\":\"%s\",\"ActiveCard\":%s,\"Holds\":[%s],\"CheckedOutCopies\":[%s],\"AuditTrail\":[%s]}",
+		return String.format("{\"PatronID\":\"%s\",\"Name\":\"%s\",\"ActiveCard\":\"%s\",\"Holds\":[%s],\"CheckedOutCopies\":[%s],\"AuditTrail\":[%s]}",
 			this.patronID,
 			this.patronName,
 			this.cardID,

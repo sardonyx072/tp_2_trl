@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,13 +14,9 @@ import java.util.UUID;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.MalformedJsonException;
 
 public class Computer {
 	private static final String INVENTORY_DB = "./save/inventory.json";
@@ -162,8 +157,6 @@ public class Computer {
 		try {file.getParentFile().mkdir();} catch(Exception e) {}
 		try {
 			writer = new BufferedWriter(new FileWriter(file));
-			for (Record record : this.records.values())
-				writer.write(record.toString());
 			writer.write(String.format("{\"Records\":[%s]}",String.join(",", this.records.values().stream().map(record -> record.toString()).toArray(String[]::new))));
 		} catch (IOException e) {LOGGER.warning(e.getMessage());}
 		finally {
@@ -185,13 +178,15 @@ public class Computer {
 				if (line != null)
 					builder.append(line);
 			} while (line != null);
-			JsonArray jsonRecords = new JsonParser().parse(builder.toString().trim()).getAsJsonArray();
+			JsonArray jsonRecords = new JsonParser().parse(builder.toString().trim()).getAsJsonObject().get("Records").getAsJsonArray();
 			for (JsonElement jsonRecord : jsonRecords) {
-				Record record = new Record(jsonRecord.getAsString());
+				Record record = new Record(jsonRecord.toString());
 				this.records.put(record.getPatronID(), record);
+				LOGGER.info("Loaded record: " + record.toString());
 			}
 		} catch (Exception e) {
 			LOGGER.warning("Could not load patron records.");
+			LOGGER.warning(e.getMessage());
 			this.records = new HashMap<UUID,Record>();
 		}
 	}
