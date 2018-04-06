@@ -3,7 +3,6 @@ package main;
 import com.google.gson.*;
 
 import java.io.File;
-import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,17 +35,24 @@ public class Record {
 		this.copies = new HashMap<Copy,Date>();
 		this.audit = new HashMap<Copy,Date>();
 	}
+	@SuppressWarnings("deprecation") //date from string, because worrying about date formats sounds like too much work
 	public Record(String jsonStr) {
 		JsonObject jsonRecord = new JsonParser().parse(jsonStr).getAsJsonObject();
 		this.patronID = UUID.fromString(jsonRecord.get("PatronID").getAsString());
 		this.patronName = jsonRecord.get("Name").getAsString();
 		this.cardID = UUID.fromString(jsonRecord.get("ActiveCard").getAsString());
-		JsonArray holds = jsonRecord.getAsJsonArray("Hold");
 		this.holds = new HashMap<Hold,Date>();
-		for (JsonElement jsonHold : holds)
+		JsonArray jsonHolds = jsonRecord.getAsJsonArray("Hold");
+		for (JsonElement jsonHold : jsonHolds)
 			this.holds.put(new Hold(jsonHold.getAsJsonObject().get("Hold").getAsJsonObject().get("Hold").getAsString()), new Date(jsonHold.getAsJsonObject().get("AddDate").getAsString()));
 		this.copies = new HashMap<Copy,Date>();
+		JsonArray jsonCopies = jsonRecord.getAsJsonArray("CheckedOutCopies");
+		for (JsonElement jsonCopy : jsonCopies)
+			this.copies.put(new Copy(jsonCopy.getAsJsonObject().get("Copy").getAsString()), new Date(jsonCopy.getAsJsonObject().get("DueDate").getAsString()));
 		this.audit = new HashMap<Copy,Date>();
+		JsonArray jsonAudits = jsonRecord.getAsJsonArray("AuditTrail");
+		for (JsonElement jsonAudit : jsonAudits)
+			this.audit.put(new Copy(jsonAudit.getAsJsonObject().get("Copy").getAsString()), new Date(jsonAudit.getAsJsonObject().get("DueDate").getAsString()));
 	}
 	public UUID getPatronID() {return this.patronID;}
 	public String getPatron() {return this.patronName;}
@@ -89,9 +95,9 @@ public class Record {
 			this.patronID,
 			this.patronName,
 			this.cardID,
-			String.join(",", (String[]) this.holds.keySet().stream().map(hold -> String.format("{\"Hold\":%s,\"AddDate\":%s}",hold,this.holds.get(hold))).toArray()),
-			String.join(",", (String[]) this.copies.keySet().stream().map(copy -> String.format("{\"Copy\":%s,\"DueDate\":%s}",copy,this.copies.get(copy))).toArray()),
-			String.join(",", (String[]) this.audit.keySet().stream().map(copy -> String.format("{\"Copy\":%s,\"ReturnedDate\":%s}",copy,this.audit.get(copy))).toArray())
+			String.join(",", this.holds.keySet().stream().map(hold -> String.format("{\"Hold\":%s,\"AddDate\":\"%s\"}",hold,this.holds.get(hold))).toArray(String[]::new)),
+			String.join(",", this.copies.keySet().stream().map(copy -> String.format("{\"Copy\":%s,\"DueDate\":\"%s\"}",copy,this.copies.get(copy))).toArray(String[]::new)),
+			String.join(",", this.audit.keySet().stream().map(copy -> String.format("{\"Copy\":%s,\"ReturnedDate\":\"%s\"}",copy,this.audit.get(copy))).toArray(String[]::new))
 		);
 	}
 }

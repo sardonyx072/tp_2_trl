@@ -34,24 +34,32 @@ public class Inventory {
 		return copy;
 	}
 	private Copy[] getCopies() {return this.copies.values().toArray(new Copy[this.copies.size()]);}
-	private Book[] getBooks() {return (Book[]) this.copies.values().stream().map(copy -> copy.getBook()).distinct().toArray();}
+	private Book[] getBooks() {return this.copies.values().stream().map(copy -> copy.getBook()).distinct().toArray(Book[]::new);}
 	public static Inventory parse(String str) {
+		LOGGER.severe("LOADING INVENTORY");
 		Inventory inventory = new Inventory();
-		JsonObject jsonRead = new JsonParser().parse(str).getAsJsonObject();
+		JsonObject jsonRead = null;
+		try {
+			jsonRead = new JsonParser().parse(str).getAsJsonObject();
+		} catch (Exception e) {
+			LOGGER.severe(e.getMessage());
+		}
 		HashMap<UUID,Book> books = new HashMap<UUID,Book>();
+		LOGGER.severe("LOADING INVENTORY - CREATED OBJECTS");
 		for (JsonElement i : jsonRead.getAsJsonArray("Info")) {
-			JsonObject jsonBook = i.getAsJsonObject();
-			Book book = new Book(UUID.fromString(jsonBook.get("BookID").getAsString()),jsonBook.get("Title").getAsString(),jsonBook.get("Author").getAsString());
+			Book book = new Book(i.toString());
 			books.put(book.getBookID(), book);
+			LOGGER.severe("LOADED BOOK: " + book.toString());
 		}
 		for (JsonElement i : jsonRead.getAsJsonArray("Inventory")) {
-			JsonObject jsonCopy = i.getAsJsonObject().getAsJsonObject("ScanInfo");
-			inventory.addCopy(new Copy(UUID.fromString(jsonCopy.getAsJsonObject("ItemID").getAsString()),books.get(UUID.fromString(jsonCopy.getAsJsonObject("ReferencedItemID").getAsString()))));
+			Copy copy = new Copy(i.toString());
+			inventory.addCopy(copy);
+			LOGGER.severe("LOADED COPY: " + copy.toString());
 		}
 		return inventory;
 	}
 	public String toString() {return String.format("{\"Inventory\":[%s],\"Info\":[%s]}",
-			String.join(",", (String[]) Arrays.asList(this.getCopies()).stream().map(copy -> copy.toString()).toArray()),
-			String.join(",", (String[]) Arrays.asList(this.getBooks()).stream().map(book -> book.toString()).toArray())
+			String.join(",", Arrays.asList(this.getCopies()).stream().map(copy -> copy.toString()).toArray(String[]::new)),
+			String.join(",", Arrays.asList(this.getBooks()).stream().map(book -> book.toString()).toArray(String[]::new))
 	);}
 }

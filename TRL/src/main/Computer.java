@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -14,9 +15,17 @@ import java.util.UUID;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.MalformedJsonException;
+
 public class Computer {
-	private static final String INVENTORY_DB = "./save/inventory.txt";
-	private static final String RECORDS_DB = "./save/records.txt";
+	private static final String INVENTORY_DB = "./save/inventory.json";
+	private static final String RECORDS_DB = "./save/records.json";
 	private static Logger LOGGER = null;
 	static {
 		try {
@@ -37,7 +46,7 @@ public class Computer {
 	public Computer () {
 		this.computerID = UUID.randomUUID();
 		this.scanner = null;
-		this.records = new HashMap<UUID,Record>();
+		this.loadRecords();
 		this.loadInventory();
 		this.worker = null;
 		this.current = null;
@@ -111,6 +120,7 @@ public class Computer {
 		this.copies = null;
 		this.current = null;
 		this.saveInventory();
+		this.saveRecords();
 		return copies;
 	}
 	private void saveInventory() {
@@ -128,21 +138,30 @@ public class Computer {
 		}
 	}
 	private void loadInventory() {
+		this.inventory = new Inventory();
 		BufferedReader reader = null;
 		File file = new File(INVENTORY_DB);
 		try {
+			LOGGER.severe("READING FILE");
 			reader = new BufferedReader(new FileReader(file));
 			StringBuilder builder = new StringBuilder();
 			String line = null;
 			do {
 				line = reader.readLine();
-				builder.append(line);
+				if (line != null)
+					builder.append(line);
 			} while (line != null);
-			this.inventory = Inventory.parse(builder.toString());
+			LOGGER.severe("MAKING GSON");
+			Gson gson = new Gson();
+			JsonReader jsonReader = new JsonReader(new StringReader(builder.toString()));
+			jsonReader.setLenient(true);
+			LOGGER.severe("READER to JSONOBJ");
+			LOGGER.severe(gson.fromJson(jsonReader, JsonObject.class).toString());
+			this.inventory = Inventory.parse(builder.toString().trim());
 		} catch (IOException e) {
 			LOGGER.warning("Could not load inventory.");
 			this.inventory = new Inventory();
-		}
+		} 
 	}
 	private void saveRecords() {
 		BufferedWriter writer = null;
@@ -152,7 +171,7 @@ public class Computer {
 			writer = new BufferedWriter(new FileWriter(file));
 			for (Record record : this.records.values())
 				writer.write(record.toString());
-			writer.write(String.join("\n", this.records.values().stream().map(record -> record.toString()).toArray(String[]::new)));
+			writer.write(String.format("{\"Records\":[%s]}",String.join(",", this.records.values().stream().map(record -> record.toString()).toArray(String[]::new))));
 		} catch (IOException e) {LOGGER.warning(e.getMessage());}
 		finally {
 			try {
@@ -161,6 +180,7 @@ public class Computer {
 		}
 	}
 	private void loadRecords() {
+		this.records = new HashMap<UUID,Record>();
 		BufferedReader reader = null;
 		File file = new File(RECORDS_DB);
 		try {
@@ -169,10 +189,15 @@ public class Computer {
 			String line = null;
 			do {
 				line = reader.readLine();
-				builder.append(line);
+				if (line != null)
+					builder.append(line);
 			} while (line != null);
-			
-		} catch (IOException e) {
+			JsonArray jsonRecords = new JsonParser().parse(builder.toString().trim()).getAsJsonArray();
+			for (JsonElement jsonRecord : jsonRecords) {
+				Record record = new Record(jsonRecord.getAsString());
+				this.records.put(record.getPatronID(), record);
+			}
+		} catch (Exception e) {
 			LOGGER.warning("Could not load patron records.");
 			this.records = new HashMap<UUID,Record>();
 		}

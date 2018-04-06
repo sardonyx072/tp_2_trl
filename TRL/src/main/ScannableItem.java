@@ -16,5 +16,5 @@ public abstract class ScannableItem implements Scannable {
 	}
 	public UUID getItemID() {return this.itemID;}
 	public UUID getReferencedItemID() {return this.referencedItemID;}
-	public String toString() {return String.format("{\"ItemID\":%s,\"ReferencedItemID\":%s}", this.itemID, this.referencedItemID);}
+	public String toString() {return String.format("{\"ItemID\":\"%s\",\"ReferencedItemID\":\"%s\"}", this.itemID, this.referencedItemID);}
 }

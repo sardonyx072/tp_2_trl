@@ -8,11 +8,11 @@ public class TRLApp {
 	public static void main(String[] args) {
 		Computer computer = new Computer();
 		computer.attachScanner(new HandheldScanner());
-		Worker worker = new Worker("Eyad Shesli");
-		Patron patron1 = new Patron("Mitchell Hoffmann");
+		Worker worker = new Worker(new Person("Eyad Shesli"));
+		Patron patron1 = new Patron(new Person("Mitchell Hoffmann"));
 		patron1.setCard(computer.createRecord(patron1));
 		computer.addHold(patron1.getCard().getReferencedItemID(),new Hold("Has not paid tuition...ever."));
-		Patron patron2 = new Patron("Mitchell 2 Hoffmann");
+		Patron patron2 = new Patron(new Person("Mitchell 2 Hoffmann"));
 		patron2.setCard(computer.createRecord(patron2));
 		List<Book> books = new ArrayList<Book>();
 		List<Copy> copies = new ArrayList<Copy>();
@@ -20,7 +20,7 @@ public class TRLApp {
 		books.add(new Book("From Hello World to Taking Over The World: An Idiot's Guide to Computers","Hugh Mann"));
 		books.add(new Book("Silicon and Sparks", "Roboto Amor"));
 		books.add(new Book("Alan's Guide to Mythical Creatures Volume 17 - The Good Manager", "Alan Kay"));
-		books.add(new Book("\"Testing in Production\" and Other Spooky Stories", "Martin Fowler"));
+		books.add(new Book("\\\"Testing in Production\\\" and Other Spooky Stories", "Martin Fowler"));
 		books.add(new Book("The Machine Cycle", "Not a Bike Enthusiast"));
 		books.add(new Book("The Post-in Note Apocalypse", "Henry Gantt"));
 		books.add(new Book("Lost in Cyberspace", "Tim Berners-Lee"));
