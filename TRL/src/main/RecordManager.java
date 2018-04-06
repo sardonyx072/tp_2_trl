@@ -65,9 +65,10 @@ public class RecordManager {
 			JsonArray jsonRecords = new JsonParser().parse(builder.toString().trim()).getAsJsonObject().get("Records").getAsJsonArray();
 			for (JsonElement jsonRecord : jsonRecords) {
 				Record record = new Record(jsonRecord.toString());
-				LOGGER.info("Loaded record: " + record.toString());
+				LOGGER.fine("Loaded record: " + record.toString());
 				this.records.put(record.getPatronID(), record);
 			}
+			LOGGER.info("Succesfully loaded all records!");
 		} catch (Exception e) {
 			LOGGER.warning("Could not load patron records.");
 			LOGGER.warning(e.getMessage());

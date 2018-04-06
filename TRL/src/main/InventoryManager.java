@@ -75,9 +75,10 @@ public class InventoryManager {
 			}
 			for (JsonElement i : jsonRead.getAsJsonArray("Inventory")) {
 				Copy copy = new Copy(i.toString());
-				LOGGER.info("Loaded copy: " + copy);
+				LOGGER.fine("Loaded copy: " + copy);
 				this.copies.put(copy.getItemID(), copy);
 			}
+			LOGGER.info("Successfully loaded inventory!");
 		} catch (IOException e) {
 			LOGGER.warning("Could not load inventory.");
 			LOGGER.warning(e.getMessage());

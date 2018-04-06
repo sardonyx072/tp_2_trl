@@ -31,8 +31,8 @@ public class Computer {
 		this.computerID = UUID.randomUUID();
 		this.scanner = null;
 		this.inventory = new InventoryManager();
-		this.inventory.load();
 		this.records = new RecordManager();
+		this.inventory.load();
 		this.records.load();
 		this.worker = null;
 		this.current = null;
