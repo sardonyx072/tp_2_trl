@@ -36,25 +36,17 @@ public class Inventory {
 	private Copy[] getCopies() {return this.copies.values().toArray(new Copy[this.copies.size()]);}
 	private Book[] getBooks() {return this.copies.values().stream().map(copy -> copy.getBook()).distinct().toArray(Book[]::new);}
 	public static Inventory parse(String str) {
-		LOGGER.severe("LOADING INVENTORY");
 		Inventory inventory = new Inventory();
 		JsonObject jsonRead = null;
-		try {
-			jsonRead = new JsonParser().parse(str).getAsJsonObject();
-		} catch (Exception e) {
-			LOGGER.severe(e.getMessage());
-		}
+		jsonRead = new JsonParser().parse(str).getAsJsonObject();
 		HashMap<UUID,Book> books = new HashMap<UUID,Book>();
-		LOGGER.severe("LOADING INVENTORY - CREATED OBJECTS");
 		for (JsonElement i : jsonRead.getAsJsonArray("Info")) {
 			Book book = new Book(i.toString());
 			books.put(book.getBookID(), book);
-			LOGGER.severe("LOADED BOOK: " + book.toString());
 		}
 		for (JsonElement i : jsonRead.getAsJsonArray("Inventory")) {
 			Copy copy = new Copy(i.toString());
 			inventory.addCopy(copy);
-			LOGGER.severe("LOADED COPY: " + copy.toString());
 		}
 		return inventory;
 	}

@@ -142,7 +142,6 @@ public class Computer {
 		BufferedReader reader = null;
 		File file = new File(INVENTORY_DB);
 		try {
-			LOGGER.severe("READING FILE");
 			reader = new BufferedReader(new FileReader(file));
 			StringBuilder builder = new StringBuilder();
 			String line = null;
@@ -151,12 +150,6 @@ public class Computer {
 				if (line != null)
 					builder.append(line);
 			} while (line != null);
-			LOGGER.severe("MAKING GSON");
-			Gson gson = new Gson();
-			JsonReader jsonReader = new JsonReader(new StringReader(builder.toString()));
-			jsonReader.setLenient(true);
-			LOGGER.severe("READER to JSONOBJ");
-			LOGGER.severe(gson.fromJson(jsonReader, JsonObject.class).toString());
 			this.inventory = Inventory.parse(builder.toString().trim());
 		} catch (IOException e) {
 			LOGGER.warning("Could not load inventory.");
