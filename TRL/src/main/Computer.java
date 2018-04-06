@@ -1,11 +1,6 @@
 package main;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -14,13 +9,7 @@ import java.util.UUID;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-
 public class Computer {
-	private static final String INVENTORY_DB = "./save/inventory.json";
-	private static final String RECORDS_DB = "./save/records.json";
 	private static Logger LOGGER = null;
 	static {
 		try {
@@ -32,8 +21,8 @@ public class Computer {
 	}
 	private UUID computerID;
 	private HandheldScanner scanner;
-	private HashMap<UUID,Record> records;
-	private Inventory inventory;
+	private RecordManager records;
+	private InventoryManager inventory;
 	private Worker worker;
 	private Record current;
 	private List<Copy> copies;
@@ -41,8 +30,10 @@ public class Computer {
 	public Computer () {
 		this.computerID = UUID.randomUUID();
 		this.scanner = null;
-		this.loadRecords();
-		this.loadInventory();
+		this.inventory = new InventoryManager();
+		this.inventory.load();
+		this.records = new RecordManager();
+		this.records.load();
 		this.worker = null;
 		this.current = null;
 		this.copies = null;
@@ -63,7 +54,7 @@ public class Computer {
 	public void scan(String type, UUID itemID, UUID referencedItemID) {
 		switch(type) {
 		case "main.Card":
-			if (this.records.get(referencedItemID).validate(itemID, referencedItemID))
+			if (this.records.getRecord(referencedItemID).validate(itemID, referencedItemID))
 				this.startCheckout(referencedItemID);
 			else
 				LOGGER.info("Session already open.");
@@ -83,7 +74,7 @@ public class Computer {
 		Record record = new Record(patron);
 		Card card = new Card(record);
 		record.setCard(card);
-		this.records.put(record.getPatronID(), record);
+		this.records.addRecord(record);
 		return card;
 	}
 	public Card issueCard(Record record) {
@@ -92,10 +83,10 @@ public class Computer {
 		return card;
 	}
 	public void addCopyToInventory(Copy copy) {this.inventory.addCopy(copy);}
-	public void addHold(UUID patronID, Hold hold) {this.records.get(patronID).addHold(hold);}
+	public void addHold(UUID patronID, Hold hold) {this.records.getRecord(patronID).addHold(hold);}
 	public Record getCurrentRecord() {return this.current;}
 	public void startCheckout(UUID recordID) {
-		this.current = this.records.get(recordID);
+		this.current = this.records.getRecord(recordID);
 		this.copies = new ArrayList<Copy>();
 		LOGGER.info(String.format("Started checkout for patron ID %s on computer %s by worker %s.",this.current.getPatronID(), this.computerID, this.worker));
 	}
@@ -114,80 +105,8 @@ public class Computer {
 		));
 		this.copies = null;
 		this.current = null;
-		this.saveInventory();
-		this.saveRecords();
+		this.inventory.save();
+		this.records.save();
 		return copies;
-	}
-	private void saveInventory() {
-		BufferedWriter writer = null;
-		File file = new File(INVENTORY_DB);
-		try{file.getParentFile().mkdir();} catch(Exception e) {}
-		try {
-			writer = new BufferedWriter(new FileWriter(file));
-			writer.write(this.inventory.toString());
-		} catch (IOException e) {LOGGER.warning(e.getMessage());}
-		finally {
-			try {
-				writer.close();
-			} catch (IOException e) {LOGGER.severe(e.getMessage());}
-		}
-	}
-	private void loadInventory() {
-		this.inventory = new Inventory();
-		BufferedReader reader = null;
-		File file = new File(INVENTORY_DB);
-		try {
-			reader = new BufferedReader(new FileReader(file));
-			StringBuilder builder = new StringBuilder();
-			String line = null;
-			do {
-				line = reader.readLine();
-				if (line != null)
-					builder.append(line);
-			} while (line != null);
-			this.inventory = Inventory.parse(builder.toString().trim());
-		} catch (IOException e) {
-			LOGGER.warning("Could not load inventory.");
-			this.inventory = new Inventory();
-		} 
-	}
-	private void saveRecords() {
-		BufferedWriter writer = null;
-		File file = new File(RECORDS_DB);
-		try {file.getParentFile().mkdir();} catch(Exception e) {}
-		try {
-			writer = new BufferedWriter(new FileWriter(file));
-			writer.write(String.format("{\"Records\":[%s]}",String.join(",", this.records.values().stream().map(record -> record.toString()).toArray(String[]::new))));
-		} catch (IOException e) {LOGGER.warning(e.getMessage());}
-		finally {
-			try {
-				writer.close();
-			} catch (IOException e) {LOGGER.severe(e.getMessage());}
-		}
-	}
-	private void loadRecords() {
-		this.records = new HashMap<UUID,Record>();
-		BufferedReader reader = null;
-		File file = new File(RECORDS_DB);
-		try {
-			reader = new BufferedReader(new FileReader(file));
-			StringBuilder builder = new StringBuilder();
-			String line = null;
-			do {
-				line = reader.readLine();
-				if (line != null)
-					builder.append(line);
-			} while (line != null);
-			JsonArray jsonRecords = new JsonParser().parse(builder.toString().trim()).getAsJsonObject().get("Records").getAsJsonArray();
-			for (JsonElement jsonRecord : jsonRecords) {
-				Record record = new Record(jsonRecord.toString());
-				this.records.put(record.getPatronID(), record);
-				LOGGER.info("Loaded record: " + record.toString());
-			}
-		} catch (Exception e) {
-			LOGGER.warning("Could not load patron records.");
-			LOGGER.warning(e.getMessage());
-			this.records = new HashMap<UUID,Record>();
-		}
 	}
 }
