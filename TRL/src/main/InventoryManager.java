@@ -39,8 +39,8 @@ public class InventoryManager {
 		LOGGER.info("Removed copy from inventory: " + copy);
 		return copy;
 	}
-	private Copy[] getCopies() {return this.copies.values().toArray(new Copy[this.copies.size()]);}
-	private Book[] getBooks() {return this.copies.values().stream().map(copy -> copy.getBook()).distinct().toArray(Book[]::new);}
+	public Copy getCopy(UUID id) {return this.copies.get(id);}
+	public Copy[] getCopies() {return this.copies.values().toArray(new Copy[this.copies.size()]);}
 	public void save() {
 		BufferedWriter writer = null;
 		File file = new File(INVENTORY_DB);
@@ -68,11 +68,6 @@ public class InventoryManager {
 					builder.append(line);
 			} while (line != null);JsonObject jsonRead = null;
 			jsonRead = new JsonParser().parse(builder.toString().trim()).getAsJsonObject();
-			HashMap<UUID,Book> books = new HashMap<UUID,Book>();
-			for (JsonElement i : jsonRead.getAsJsonArray("Info")) {
-				Book book = new Book(i.toString());
-				books.put(book.getBookID(), book);
-			}
 			for (JsonElement i : jsonRead.getAsJsonArray("Inventory")) {
 				Copy copy = new Copy(i.toString());
 				LOGGER.fine("Loaded copy: " + copy);
@@ -86,8 +81,7 @@ public class InventoryManager {
 		} 
 	}
 	public String toString() {
-		return String.format("{\"Inventory\":[%s],\"Info\":[%s]}",
-			String.join(",", Arrays.asList(this.getCopies()).stream().map(copy -> copy.toString()).toArray(String[]::new)),
-			String.join(",", Arrays.asList(this.getBooks()).stream().map(book -> book.toString()).toArray(String[]::new))
+		return String.format("{\"Inventory\":[%s]}",
+			String.join(",", Arrays.asList(this.getCopies()).stream().map(copy -> copy.toString()).toArray(String[]::new))
 	);}
 }

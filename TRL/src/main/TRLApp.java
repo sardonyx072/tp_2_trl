@@ -1,7 +1,9 @@
 package main;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 
 public class TRLApp {
 
@@ -12,11 +14,13 @@ public class TRLApp {
 		Patron patron1 = new Patron(new Person("Mitchell Hoffmann"));
 		patron1.setCard(computer.createRecord(patron1));
 		computer.addHold(patron1.getCard().getReferencedItemID(),new Hold("Has not paid tuition...ever."));
-		Patron patron2 = new Patron(new Person("Mitchell 2 Hoffmann"));
+		Patron patron2 = new Patron(new Person("Sir Mitchell Hoffmann II Esq."));
 		patron2.setCard(computer.createRecord(patron2));
+		Patron patron3 = new Patron(new Person("HRH Mitchell Hoffmann III"));
+		patron3.setCard(computer.createRecord(patron3));
 		List<Book> books = new ArrayList<Book>();
-		List<Copy> copies = new ArrayList<Copy>();
-		List<Copy> checkoutPre = new ArrayList<Copy>();
+		HashSet<Copy> copies = new HashSet<Copy>();
+		List<Copy> checkout = new ArrayList<Copy>();
 		books.add(new Book("From Hello World to Taking Over The World: An Idiot's Guide to Computers","Hugh Mann"));
 		books.add(new Book("Silicon and Sparks, A Mahine Learning To Love", "Mr. Roboto"));
 		books.add(new Book("Alan's Guide to Mythical Creatures Volume 17 - The Good Manager", "Alan Kay"));
@@ -76,23 +80,61 @@ public class TRLApp {
 		books.add(new Book("C Sharp, Not C Flat - A Programmer's Guide to Algo-Rhythms", "Database Clef"));
 		books.add(new Book("How To Hack the CIA Mainframe in Under 60 Seconds", "Hank 'Teevee' McHackermann"));
 		for (Book book: books) {
-			Copy first = new Copy(book);
-			checkoutPre.add(first);
-			copies.add(first);
-			copies.add(new Copy(book));
-			copies.add(new Copy(book));
-			copies.add(new Copy(book));
+			int num = (int)(Math.random()*4)+1;
+			for (int i = 0; i < num; i++)
+				copies.add(new Copy(book));
 		}
-		for (Copy copy : copies)
-			computer.addCopyToInventory(copy);
+		if (computer.getCopies().size() == 0)
+			for (Copy copy : copies)
+				computer.addCopyToInventory(copy);
+		copies.clear();
 		computer.signIn(worker);
+		Scanner scan = new Scanner(System.in);
+		String line = null;
+		int width = 4;
+		List<Copy> inventory = computer.getCopies();
+		inventory.sort((copy1, copy2) -> copy1.getBook().getTitle().compareTo(copy2.getBook().getTitle()));
+		do {
+			System.out.println("Inventory:");
+			System.out.println("\t" + String.format("%"+width+"s. %s", "0", "<proceed to checkout>"));
+			for (int i = 0; i < inventory.size(); i++) {
+				Copy copy = inventory.get(i);
+				System.out.println("\t" + String.format("%"+width+"s. Title: \"%s\", Author: \"%s\", Condition: \"%s\"", i+1, copy.getBook().getTitle(), copy.getBook().getAuthor(), copy.getCondition()));
+			}
+			System.out.println("Copies to Check Out:");
+			if (checkout.size() == 0)
+				System.out.println("\t<none>");
+			for (int i = 0; i < checkout.size(); i++) {
+				Copy copy = checkout.get(i);
+				System.out.println("\t" + String.format("%"+width+"s. Title: \"%s\", Author: \"%s\", Condition: \"%s\"", i+1, copy.getBook().getTitle(), copy.getBook().getAuthor(), copy.getCondition()));
+			}
+			System.out.print("Check out another copy? Enter copy num or 0 to quit: ");
+			line = scan.nextLine();
+			try {
+				Copy copy = inventory.get(Integer.parseInt(line)-1);
+				if (copies.add(copy))
+					checkout.add(copy);
+			} catch (Exception e) {
+				if (line.equals("0"))
+					line = null;
+			}
+		} while (line != null);
 		worker.scan(computer.getScanner(), patron1.getCard());
-		while (checkoutPre.size() > 0)
-			worker.scan(computer.getScanner(), checkoutPre.remove(0));
-		List<Copy> checkoutPost = computer.completeCheckout();
-		if (checkoutPost.size()>0)
-			System.out.println("Successful");
+		if (computer.getCurrentRecord() != null) {
+			for (int i = 0; i < checkout.size(); i++) {
+				Copy copy = checkout.get(i);
+				System.out.print("Confirm scan: " + String.format("%"+width+"s. Title: \"%s\", Author: \"%s\", Condition: \"%s\"", i+1, copy.getBook().getTitle(), copy.getBook().getAuthor(), copy.getCondition()) + "? ");
+				scan.nextLine();
+				worker.scan(computer.getScanner(), copy);
+			}
+			List<Copy> checkoutPost = computer.completeCheckout();
+			if (checkoutPost.size()>0)
+				System.out.println("Successfully checked out books");
+			else
+				System.out.print("Unsuccessful in checking out books");
+		}
 		else
-			System.out.print("Unsuccessful");
+			System.out.println("Invalid ID card.");
+		scan.close();
 	}
 }

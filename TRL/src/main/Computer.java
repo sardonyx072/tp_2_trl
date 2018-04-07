@@ -2,6 +2,7 @@ package main;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +24,7 @@ public class Computer {
 	private HandheldScanner scanner;
 	private RecordManager records;
 	private InventoryManager inventory;
+	private HashMap<Book,Integer> demand;
 	private Worker worker;
 	private Record current;
 	private List<Copy> copies;
@@ -34,6 +36,7 @@ public class Computer {
 		this.records = new RecordManager();
 		this.inventory.load();
 		this.records.load();
+		this.demand = new HashMap<Book,Integer>();
 		this.worker = null;
 		this.current = null;
 		this.copies = null;
@@ -43,6 +46,7 @@ public class Computer {
 		scanner.attach(this);
 		this.scanner = scanner;
 	}
+	public List<Copy> getCopies() {return Arrays.asList(this.inventory.getCopies());}
 	public HashMap<Hold,Date> getHolds() {return this.current.getHolds();}
 	public HashMap<Copy,Date> getOutCopies() {return this.current.getCopies();}
 	public HashMap<Copy,Date> getAuditTrait() {return this.getAuditTrait();}
@@ -91,12 +95,15 @@ public class Computer {
 		LOGGER.info(String.format("Started checkout for patron ID %s on computer %s by worker %s.",this.current.getPatronID(), this.computerID, this.worker));
 	}
 	public void checkoutCopy(UUID copyID) {
-		Copy copy = this.inventory.removeCopy(copyID);
+		Copy copy = this.inventory.getCopy(copyID);
 		this.copies.add(copy);
+		this.demand.put(copy.getBook(), (this.demand.containsKey(copy.getBook()) ? this.demand.get(copy.getBook()) : 0) + 1);
 		LOGGER.info(String.format("Added copy %s to running checkout list for patron %s.", copy, this.current.getPatronID()));
 	}
 	public List<Copy> completeCheckout() {
 		List<Copy> copies = this.copies;
+		for (Copy copy : this.copies)
+			this.inventory.removeCopy(copy.getItemID());
 		LOGGER.info(String.format("Completed checkout for patron ID %s on computer %s by worker %s with copies %s.", 
 			this.current.getPatronID(),
 			this.computerID,
