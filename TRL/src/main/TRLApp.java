@@ -11,13 +11,18 @@ public class TRLApp {
 		Computer computer = new Computer();
 		computer.attachScanner(new HandheldScanner());
 		Worker worker = new Worker(new Person("Eyad Shesli"));
-		Patron patron1 = new Patron(new Person("Mitchell Hoffmann"));
-		patron1.setCard(computer.createRecord(patron1));
-		computer.addHold(patron1.getCard().getReferencedItemID(),new Hold("Has not paid tuition...ever."));
-		Patron patron2 = new Patron(new Person("Sir Mitchell Hoffmann II Esq."));
-		patron2.setCard(computer.createRecord(patron2));
-		Patron patron3 = new Patron(new Person("HRH Mitchell Hoffmann III"));
-		patron3.setCard(computer.createRecord(patron3));
+		if (computer.getRecords().size() == 0) {
+			Patron patron1 = new Patron(new Person("Mitchell Hoffmann"));
+			patron1.setCard(computer.createRecord(patron1));
+			computer.addHold(patron1.getCard().getReferencedItemID(),new Hold("Has not paid tuition...ever."));
+			Patron patron2 = new Patron(new Person("Sir Mitchell Hoffmann II Esq."));
+			patron2.setCard(computer.createRecord(patron2));
+			Patron patron3 = new Patron(new Person("HRH Mitchell Hoffmann III"));
+			patron3.setCard(computer.createRecord(patron3));
+		}
+		List<Record> records = new ArrayList<Record>(computer.getRecords());
+		Patron patron = new Patron(new Person(records.get(0).getPatron()));
+		patron.setCard(computer.issueCard(records.get(0)));
 		List<Book> books = new ArrayList<Book>();
 		HashSet<Copy> copies = new HashSet<Copy>();
 		List<Copy> checkout = new ArrayList<Copy>();
@@ -92,7 +97,7 @@ public class TRLApp {
 		Scanner scan = new Scanner(System.in);
 		String line = null;
 		int width = 4;
-		List<Copy> inventory = computer.getCopies();
+		List<Copy> inventory = new ArrayList<Copy>(computer.getCopies());
 		inventory.sort((copy1, copy2) -> copy1.getBook().getTitle().compareTo(copy2.getBook().getTitle()));
 		do {
 			System.out.println("Inventory:");
@@ -119,7 +124,7 @@ public class TRLApp {
 					line = null;
 			}
 		} while (line != null);
-		worker.scan(computer.getScanner(), patron1.getCard());
+		worker.scan(computer.getScanner(), patron.getCard());
 		if (computer.getCurrentRecord() != null) {
 			for (int i = 0; i < checkout.size(); i++) {
 				Copy copy = checkout.get(i);

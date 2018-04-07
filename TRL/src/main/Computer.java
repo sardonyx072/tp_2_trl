@@ -2,9 +2,9 @@ package main;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.LogManager;
@@ -46,7 +46,8 @@ public class Computer {
 		scanner.attach(this);
 		this.scanner = scanner;
 	}
-	public List<Copy> getCopies() {return Arrays.asList(this.inventory.getCopies());}
+	public HashSet<Copy> getCopies() {return this.inventory.getCopies();}
+	public HashSet<Record> getRecords() {return this.records.getRecords();}
 	public HashMap<Hold,Date> getHolds() {return this.current.getHolds();}
 	public HashMap<Copy,Date> getOutCopies() {return this.current.getCopies();}
 	public HashMap<Copy,Date> getAuditTrait() {return this.getAuditTrait();}
@@ -97,13 +98,15 @@ public class Computer {
 	public void checkoutCopy(UUID copyID) {
 		Copy copy = this.inventory.getCopy(copyID);
 		this.copies.add(copy);
-		this.demand.put(copy.getBook(), (this.demand.containsKey(copy.getBook()) ? this.demand.get(copy.getBook()) : 0) + 1);
 		LOGGER.info(String.format("Added copy %s to running checkout list for patron %s.", copy, this.current.getPatronID()));
 	}
 	public List<Copy> completeCheckout() {
 		List<Copy> copies = this.copies;
-		for (Copy copy : this.copies)
+		for (Copy copy : this.copies) {
 			this.inventory.removeCopy(copy.getItemID());
+			this.demand.put(copy.getBook(), (this.demand.containsKey(copy.getBook()) ? this.demand.get(copy.getBook()) : 0) + 1);
+			this.current.checkoutCopy(copy);
+		}
 		LOGGER.info(String.format("Completed checkout for patron ID %s on computer %s by worker %s with copies %s.", 
 			this.current.getPatronID(),
 			this.computerID,

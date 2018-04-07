@@ -10,6 +10,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.UUID;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -40,7 +41,7 @@ public class InventoryManager {
 		return copy;
 	}
 	public Copy getCopy(UUID id) {return this.copies.get(id);}
-	public Copy[] getCopies() {return this.copies.values().toArray(new Copy[this.copies.size()]);}
+	public HashSet<Copy> getCopies() {return new HashSet<Copy>(this.copies.values());}
 	public void save() {
 		BufferedWriter writer = null;
 		File file = new File(INVENTORY_DB);
@@ -82,6 +83,6 @@ public class InventoryManager {
 	}
 	public String toString() {
 		return String.format("{\"Inventory\":[%s]}",
-			String.join(",", Arrays.asList(this.getCopies()).stream().map(copy -> copy.toString()).toArray(String[]::new))
+			String.join(",", this.getCopies().stream().map(copy -> copy.toString()).toArray(String[]::new))
 	);}
 }

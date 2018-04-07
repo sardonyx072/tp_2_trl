@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.UUID;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -35,6 +36,7 @@ public class RecordManager {
 		LOGGER.info("Added record to system: " + record);
 	}
 	public Record getRecord(UUID id) {return this.records.get(id);}
+	public HashSet<Record> getRecords() {return new HashSet<Record>(this.records.values());}
 	public void save() {
 		BufferedWriter writer = null;
 		File file = new File(RECORDS_DB);
